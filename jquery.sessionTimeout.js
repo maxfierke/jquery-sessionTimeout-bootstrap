@@ -58,7 +58,7 @@
 (function( $ ){
 	jQuery.sessionTimeout = function( options ) {
 		var defaults = {
-			title		 : 'Your session is about to expire!'
+			title		     : 'Your session is about to expire!',
 			message          : 'Your session is about to expire.',
             stayConnectedBtn : 'Stay connected',
             logoutBtn        : 'Logout',
