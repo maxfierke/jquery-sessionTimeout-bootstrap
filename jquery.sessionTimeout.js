@@ -29,11 +29,19 @@
 //     Text shown to user in dialog after warning period.
 //     Default: 'Your session is about to expire.'
 //
+//   titleMessage
+//     Text shown in the browser title/tab bar via the via html/head/title attribute.
+//     Default: 'Warning: Time Out'
+//
 //   stayConnectedBtn
 //     Default: 'Stay connected'
 //
 //   logoutBtn
 //     Default: 'Logout'
+//
+//   closeModals
+//     Array of modla IDs to close prior to opening the time-out modal	
+//     Default: 'array = []'
 //
 //   keepAliveUrl
 //     URL to call through AJAX to keep session alive. This resource should do something innocuous that would keep the session alive, which will depend on your server-side platform.
@@ -57,11 +65,16 @@
 //
 (function( $ ){
 	jQuery.sessionTimeout = function( options ) {
+		// DEFINE AN ARRAY TO STORE OTEHR MODALS TO CLOSE
+		var otherModals = [];
+		// DEFAULT CONFIG
 		var defaults = {
-			title		     : 'Your session is about to expire!',
+			title		 	 : 'Your session is about to expire!',
 			message          : 'Your session is about to expire.',
+			titleMessage     : 'Warning: Time Out',
             stayConnectedBtn : 'Stay connected',
             logoutBtn        : 'Logout',
+            closeModals		 : otherModals,
 			keepAliveUrl     : '/keep-alive',
 			redirUrl         : '/timed-out',
 			logoutUrl        : '/log-out',
@@ -77,7 +90,23 @@
 		if ( options ) { o = $.extend( defaults, options ); }
 
 		// Create timeout warning dialog
-		$('body').append('<div class="modal fade" id="sessionTimeout-dialog"><div class="modal-dialog"><div class="modal-content"><div class="modal-header"><button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button><h4 class="modal-title">'+o.title+'</h4></div><div class="modal-body">'+ o.message +'</div><div class="modal-footer"><button id="sessionTimeout-dialog-logout" type="button" class="btn btn-default">'+o.logoutBtn+'</button><button id="sessionTimeout-dialog-keepalive" type="button" class="btn btn-primary" data-dismiss="modal">'+o.stayConnectedBtn+'</button></div></div></div></div>');
+		$('body').append('<div class="modal fade" id="sessionTimeout-dialog">'
+							+'<div class="modal-dialog">'
+							+'<div class="modal-content">'
+							+'<div class="modal-header">'
+							+'<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>'
+							+'<h4 class="modal-title">'+o.title+'</h4>'
+							+'</div>'
+							+'<div class="modal-body">'+o.message+'</div>'
+							+'<div class="modal-footer">'
+							+'<div class="btn-group">'
+							+'<button id="sessionTimeout-dialog-logout" type="button" class="btn btn-danger">'+o.logoutBtn+'</button>'
+							+'<button id="sessionTimeout-dialog-keepalive" type="button" class="btn btn-success" data-dismiss="modal">'+o.stayConnectedBtn+'</button>'
+							+'</div>'
+							+'</div>'
+							+'</div>'
+							+'</div>'
+							+'</div>');
 		$('#sessionTimeout-dialog-logout').on('click', function () { window.location = o.logoutUrl; });
 		$('#sessionTimeout-dialog').on('hide.bs.modal', function () {
 			$.ajax({
@@ -88,13 +117,21 @@
 			// Stop redirect timer and restart warning timer
 			controlRedirTimer('stop');
 			controlDialogTimer('start');
-		})
+		});
 
 		function controlDialogTimer(action){
 			switch(action) {
 				case 'start':
 					// After warning period, show dialog and start redirect timer
 					dialogTimer = setTimeout(function(){
+						// CLOSE ANY POTENTIALLY OPEN MODALS
+						$.each( o.closeModals, function( i, val ) {
+							$('#' + val).modal('hide');
+						});
+						
+						// SET HEAD TITLE MESSAGE
+						document.title = o.titleMessage;
+						
 						$('#sessionTimeout-dialog').modal('show');
 						controlRedirTimer('start');
 					}, o.warnAfter);
