@@ -1,4 +1,4 @@
-﻿/*jshint browser:true*/
+/*jshint browser:true*/
 
 //
 // jquery.sessionTimeout.js
@@ -40,7 +40,7 @@
 //     Default: 'Logout'
 //
 //   closeModals
-//     Array of modla IDs to close prior to opening the time-out modal	
+//     Array of modla IDs to close prior to opening the time-out modal
 //     Default: 'array = []'
 //
 //   keepAliveUrl
@@ -63,102 +63,144 @@
 //     Time in milliseconds after page is opened until browser is redirected to redirUrl
 //     Default: 1200000 (20 minutes)
 //
+//   resetOnAjaxCall
+//     true/false if reset clock when any ajax call happen
+//     Default: false
+//
 (function( $ ){
-	jQuery.sessionTimeout = function( options ) {
-		// DEFINE AN ARRAY TO STORE OTEHR MODALS TO CLOSE
-		var otherModals = [];
-		// DEFAULT CONFIG
-		var defaults = {
-			title		 	 : 'Your session is about to expire!',
-			message          : 'Your session is about to expire.',
-			titleMessage     : 'Warning: Time Out',
-            stayConnectedBtn : 'Stay connected',
-            logoutBtn        : 'Logout',
-            closeModals		 : otherModals,
-			keepAliveUrl     : '/keep-alive',
-			redirUrl         : '/timed-out',
-			logoutUrl        : '/log-out',
-			warnAfter        : 900000, // 15 minutes
-			redirAfter       : 1200000 // 20 minutes
-		};
+  jQuery.sessionTimeout = function( options ) {
+    // DEFINE AN ARRAY TO STORE OTEHR MODALS TO CLOSE
+    var otherModals = [];
+    // DEFAULT CONFIG
+    var defaults = {
+      title		 	       : 'Your session is about to expire!',
+      message          : 'Your session is about to expire.',
+      titleMessage     : 'Warning: Time Out',
+      stayConnectedBtn : 'Stay connected',
+      logoutBtn        : 'Logout',
+      closeModals		   : otherModals,
+      keepAliveUrl     : '/keep-alive',
+      redirUrl         : '/timed-out',
+      logoutUrl        : '/log-out',
+      warnAfter        : 900000, // 15 minutes
+      redirAfter       : 1200000, // 20 minutes
+      resetOnAjaxCall  : false
+    };
 
-		// Extend user-set options over defaults
-		var o = defaults,
-				dialogTimer,
-				redirTimer;
+    // Extend user-set options over defaults
+    var o = defaults,
+        dialogTimer,
+        redirTimer,
+        counterTimer,
+        title,
+        i;
 
-		if ( options ) { o = $.extend( defaults, options ); }
+    if ( options ) { o = $.extend( defaults, options ); }
 
-		// Create timeout warning dialog
-		$('body').append('<div class="modal fade" id="sessionTimeout-dialog">'
-							+'<div class="modal-dialog">'
-							+'<div class="modal-content">'
-							+'<div class="modal-header">'
-							+'<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>'
-							+'<h4 class="modal-title">'+o.title+'</h4>'
-							+'</div>'
-							+'<div class="modal-body">'+o.message+'</div>'
-							+'<div class="modal-footer">'
-							+'<div class="btn-group">'
-							+'<button id="sessionTimeout-dialog-logout" type="button" class="btn btn-danger">'+o.logoutBtn+'</button>'
-							+'<button id="sessionTimeout-dialog-keepalive" type="button" class="btn btn-success" data-dismiss="modal">'+o.stayConnectedBtn+'</button>'
-							+'</div>'
-							+'</div>'
-							+'</div>'
-							+'</div>'
-							+'</div>');
-		$('#sessionTimeout-dialog-logout').on('click', function () { window.location = o.logoutUrl; });
-		$('#sessionTimeout-dialog').on('hide.bs.modal', function () {
-			$.ajax({
-				type: 'POST',
-				url: o.keepAliveUrl
-			});
+    // Create timeout warning dialog
+    $('body').append('<div class="modal fade" id="sessionTimeout-dialog">'
+              +'<div class="modal-dialog">'
+                +'<div class="modal-content">'
+                  +'<div class="modal-header">'
+                    +'<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>'
+                    +'<h4 class="modal-title">'+o.title+'</h4>'
+                  +'</div>'
+                  +'<div class="modal-body">'+o.message+'</div>'
+                    +'<div class="modal-footer">'
+                      +'<button id="sessionTimeout-dialog-logout" type="button" class="btn btn-danger">'+o.logoutBtn+'</button>'
+                      +'<button id="sessionTimeout-dialog-keepalive" type="button" class="btn btn-success" data-dismiss="modal">'+o.stayConnectedBtn+'</button>'
+                    +'</div>'
+                  +'</div>'
+                +'</div>'
+              +'</div>');
 
-			// Stop redirect timer and restart warning timer
-			controlRedirTimer('stop');
-			controlDialogTimer('start');
-		});
+    $('#sessionTimeout-dialog-logout').on('click', function () { window.location = o.logoutUrl; });
 
-		function controlDialogTimer(action){
-			switch(action) {
-				case 'start':
-					// After warning period, show dialog and start redirect timer
-					dialogTimer = setTimeout(function(){
-						// CLOSE ANY POTENTIALLY OPEN MODALS
-						$.each( o.closeModals, function( i, val ) {
-							$('#' + val).modal('hide');
-						});
-						
-						// SET HEAD TITLE MESSAGE
-						document.title = o.titleMessage;
-						
-						$('#sessionTimeout-dialog').modal('show');
-						controlRedirTimer('start');
-					}, o.warnAfter);
-					break;
+    $('#sessionTimeout-dialog').on('hide.bs.modal', function () {
+      $.ajax({
+        type: 'POST',
+        url: o.keepAliveUrl
+      });
 
-				case 'stop':
-					clearTimeout(dialogTimer);
-					break;
-			}
-		}
+      // Remove tempolary title
+      document.title = title;
 
-		function controlRedirTimer(action){
-			switch(action) {
-				case 'start':
-					// Dialog has been shown, if no action taken during redir period, redirect
-					redirTimer = setTimeout(function(){
-						window.location = o.redirUrl;
-					}, o.redirAfter - o.warnAfter);
-					break;
+      // Stop redirect timer and restart warning timer
+      controlRedirTimer('stop');
+      controlCounterTimer('stop');
+      controlDialogTimer('start');
+    });
 
-				case 'stop':
-					clearTimeout(redirTimer);
-					break;
-			}
-		}
+    function controlDialogTimer(action){
+      switch(action) {
+        case 'start':
+          // After warning period, show dialog and start redirect timer
+          dialogTimer = setTimeout(function(){
+            // CLOSE ANY POTENTIALLY OPEN MODALS
+            $.each( o.closeModals, function( i, val ) {
+              $('#' + val).modal('hide');
+            });
 
-		// Begin warning period
-		controlDialogTimer('start');
-	};
+            // SET HEAD TITLE MESSAGE
+            title = document.title;
+            document.title = o.titleMessage;
+
+            $('#sessionTimeout-dialog').modal('show');
+            controlRedirTimer('start');
+            controlCounterTimer('start');
+
+          }, o.warnAfter);
+          break;
+
+        case 'stop':
+          clearTimeout(dialogTimer);
+          break;
+      }
+    }
+
+    function controlRedirTimer(action) {
+      switch(action) {
+        case 'start':
+          // Dialog has been shown, if no action taken during redir period, redirect
+          redirTimer = setTimeout(function() {
+            window.location = o.redirUrl;
+          }, o.redirAfter - o.warnAfter);
+          break;
+
+        case 'stop':
+          clearTimeout(redirTimer);
+          break;
+      }
+    }
+
+    function controlCounterTimer(action) {
+      switch(action) {
+        case 'start':
+          i = (o.redirAfter - o.warnAfter) / 1000
+          // Counter tick
+          counterTimer = setInterval(function() {
+            i = i - 1;
+            $("#sessionTimeout-dialog-logout").text(o.logoutBtn + " (" + i + ")")
+          }, 1000);
+          break;
+
+        case 'stop':
+          clearInterval(counterTimer);
+          $("#sessionTimeout-dialog-logout").text(o.logoutBtn);
+          break;
+      }
+    }
+
+    if(o.resetOnAjaxCall) {
+      $.ajaxPrefilter(function(options) {
+        controlDialogTimer('stop');
+        controlRedirTimer('stop');
+        controlCounterTimer('stop');
+        controlDialogTimer('start');
+      });
+    }
+
+    // Begin warning period
+    controlDialogTimer('start');
+  };
 })( jQuery );

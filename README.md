@@ -48,3 +48,7 @@ Default: 'Stay Connected'
 **logoutBtn**<br>
 Text to use for the 'Logout' button<br>
 Default: 'Logout'
+
+**resetOnAjaxCall**<br>
+Reseting counter, when any ajax call via jquery has been made<br>
+Default: false

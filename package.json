@@ -1,6 +1,6 @@
 {
   "name": "sessiontimeout-bootstrap",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "After a set amount of time, a dialog is shown to the user with the option to either log out now, or stay connected. If log out now is selected, the page is redirected to a logout URL. If stay connected is selected, a keep-alive URL is requested through AJAX. If no options is selected after another set amount of time, the page is automatically redirected to a timeout URL. This fork uses Bootstrap's modal instead of upstream's jQuery UI modal.",
   "main": "jquery.sessionTimeout.js",
   "scripts": {
@@ -26,6 +26,11 @@
         "name": "John Lumley",
         "email": "jlumley@jelby.com",
         "url": "https://www.jelby.com"
+    },
+    {
+        "name": "Wojciech Grześkowiak",
+        "email": "ja@fones.pl",
+        "url": "https://www.fones.pl"
     }
   ],
   "license": "MIT",
