@@ -4,6 +4,8 @@ Derived from jquery-sessionTimeout
 
 See https://github.com/travishorn/jquery-sessionTimeout for more info.
 
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+
 
 ## Description
 After a set amount of time, a dialog is shown to the user with the option to either log out now, or stay connected. If log out now is selected, the page is redirected to a logout URL. If stay connected is selected, a keep-alive URL is requested through AJAX. If no options is selected after another set amount of time, the page is automatically redirected to a timeout URL.
